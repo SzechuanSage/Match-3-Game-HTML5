@@ -129,7 +129,7 @@ window.onload = function () {
         // Update the fps counter
         updateFps(deltaFrameTime);
 
-        if (gameState == gameStates.ready) {
+        if (gameState === gameStates.ready) {
             // Game is ready for player input
 
             // Check for game over
@@ -157,11 +157,11 @@ window.onload = function () {
                     animationTime = 0;
                 }
             }
-        } else if (gameState == gameStates.resolve) {
+        } else if (gameState === gameStates.resolve) {
             // Game is busy resolving and animating clusters
             animationTime += deltaFrameTime;
 
-            if (animationState == 0) {
+            if (animationState === 0) {
                 // Clusters need to be found and removed
                 if (animationTime > animationTimeTotal) {
                     // Find clusters
@@ -185,7 +185,7 @@ window.onload = function () {
                     }
                     animationTime = 0;
                 }
-            } else if (animationState == 1) {
+            } else if (animationState === 1) {
                 // Tiles need to be shifted
                 if (animationTime > animationTimeTotal) {
                     // Shift tiles
@@ -202,7 +202,7 @@ window.onload = function () {
                         gameState = gameStates.ready;
                     }
                 }
-            } else if (animationState == 2) {
+            } else if (animationState === 2) {
                 // Swapping tiles animation
                 if (animationTime > animationTimeTotal) {
                     // Swap the tiles
@@ -226,7 +226,7 @@ window.onload = function () {
                     findMoves();
                     findClusters();
                 }
-            } else if (animationState == 3) {
+            } else if (animationState === 3) {
                 // Rewind swapping animation
                 if (animationTime > animationTimeTotal) {
                     // Invalid swap, swap back
@@ -291,7 +291,7 @@ window.onload = function () {
         renderClusters();
 
         // Render moves, when there are no clusters
-        if (canShowMoves && clusters.length <= 0 && gameState == gameStates.ready) {
+        if (canShowMoves && clusters.length <= 0 && gameState === gameStates.ready) {
             renderMoves();
         }
 
@@ -365,7 +365,7 @@ window.onload = function () {
 
                 // Draw the selected tile
                 if (level.selectedTile.selected) {
-                    if (level.selectedTile.column == i && level.selectedTile.row == j) {
+                    if (level.selectedTile.column === i && level.selectedTile.row === j) {
                         // Draw a red tile
                         drawTile(coordinate.tileX, coordinate.tileY, 255, 0, 0);
                     }
@@ -374,7 +374,7 @@ window.onload = function () {
         }
 
         // Render the swap animation
-        if (gameState == gameStates.resolve && (animationState == 2 || animationState == 3)) {
+        if (gameState === gameStates.resolve && (animationState === 2 || animationState === 3)) {
             // Calculate the x and y shift
             var shiftX = currentMove.column2 - currentMove.column1;
             var shiftY = currentMove.row2 - currentMove.row1;
@@ -394,7 +394,7 @@ window.onload = function () {
             drawTile(secondTileStartCoordinate.tileX, secondTileStartCoordinate.tileY, 0, 0, 0);
 
             // Change the order, depending on the animation state
-            if (animationState == 2) {
+            if (animationState === 2) {
                 // Draw the tiles
                 drawTile(firstTileEndCoordinate.tileX, firstTileEndCoordinate.tileY, firstTileColor[0], firstTileColor[1], firstTileColor[2]);
                 drawTile(secondTileEndCoordinate.tileX, secondTileEndCoordinate.tileY, secondTileColor[0], secondTileColor[1], secondTileColor[2]);
@@ -536,13 +536,13 @@ window.onload = function () {
             for (i = 0; i < level.columns; i += 1) {
                 isClusterFound = false;
 
-                if (i == level.columns - 1) {
+                if (i === level.columns - 1) {
                     // Last tile
                     isClusterFound = true;
                 } else {
                     // Check the type of the next tile
-                    if (level.tiles[i][j].type == level.tiles[i + 1][j].type &&
-                        level.tiles[i][j].type != -1) {
+                    if (level.tiles[i][j].type === level.tiles[i + 1][j].type &&
+                        level.tiles[i][j].type !== -1) {
                         // Same type as the previous tile, increase matchLength
                         matchLength += 1;
                     } else {
@@ -573,13 +573,13 @@ window.onload = function () {
             for (j = 0; j < level.rows; j += 1) {
                 isClusterFound = false;
 
-                if (j == level.rows - 1) {
+                if (j === level.rows - 1) {
                     // Last tile
                     isClusterFound = true;
                 } else {
                     // Check the type of the next tile
-                    if (level.tiles[i][j].type == level.tiles[i][j + 1].type &&
-                        level.tiles[i][j].type != -1) {
+                    if (level.tiles[i][j].type === level.tiles[i][j + 1].type &&
+                        level.tiles[i][j].type !== -1) {
                         // Same type as the previous tile, increase matchLength
                         matchLength += 1;
                     } else {
@@ -678,7 +678,7 @@ window.onload = function () {
             var shift = 0;
             for (var j = level.rows - 1; j >= 0; j -= 1) {
                 // Loop from bottom to top
-                if (level.tiles[i][j].type == -1) {
+                if (level.tiles[i][j].type === -1) {
                     // Tile is removed, increase shift
                     shift += 1;
                     level.tiles[i][j].shift = 0;
@@ -696,7 +696,7 @@ window.onload = function () {
         for (var i = 0; i < level.columns; i += 1) {
             for (var j = level.rows - 1; j >= 0; j -= 1) {
                 // Loop from bottom to top
-                if (level.tiles[i][j].type == -1) {
+                if (level.tiles[i][j].type === -1) {
                     // Insert new random tile
                     level.tiles[i][j].type = getRandomTile();
                 } else {
@@ -741,8 +741,8 @@ window.onload = function () {
     function canSwap(x1, y1, x2, y2) {
         // Check if the tile is a direct neighbor of the selected tile
         return (
-            (Math.abs(x1 - x2) == 1 && y1 == y2) ||
-            (Math.abs(y1 - y2) == 1 && x1 == x2)
+            (Math.abs(x1 - x2) === 1 && y1 === y2) ||
+            (Math.abs(y1 - y2) === 1 && x1 === x2)
         );
     }
 
@@ -802,7 +802,7 @@ window.onload = function () {
                 // Valid tile
                 var swapped = false;
                 if (level.selectedTile.selected) {
-                    if (mouseTilePosition.x == level.selectedTile.column && mouseTilePosition.y == level.selectedTile.row) {
+                    if (mouseTilePosition.x === level.selectedTile.column && mouseTilePosition.y === level.selectedTile.row) {
                         // Same tile selected, deselect
                         level.selectedTile.selected = false;
                         return;
@@ -834,14 +834,14 @@ window.onload = function () {
                 pos.y >= buttons[i].y && pos.y < buttons[i].y + buttons[i].height) {
 
                 // Button i was clicked
-                if (i == 0) {
+                if (i === 0) {
                     // New Game
                     newGame();
-                } else if (i == 1) {
+                } else if (i === 1) {
                     // Show Moves
                     canShowMoves = !canShowMoves;
                     buttons[i].text = (canShowMoves ? "Hide" : "Show") + " Moves";
-                } else if (i == 2) {
+                } else if (i === 2) {
                     // AI Bot
                     isAIBotEnabled = !isAIBotEnabled;
                     buttons[i].text = (isAIBotEnabled ? "Disable" : "Enable") + " AI Bot";
