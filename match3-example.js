@@ -25,9 +25,9 @@ window.onload = function () {
     var context = canvas.getContext("2d");
 
     // Timing and frames per second
-    var lastframe = 0;
-    var fpstime = 0;
-    var framecount = 0;
+    var lastFrameTime = 0;
+    var frameTime = 0;
+    var frameCount = 0;
     var fps = 0;
 
     // Mouse dragging
@@ -39,14 +39,14 @@ window.onload = function () {
         y: 113,         // Y position
         columns: 8,     // Number of tile columns
         rows: 8,        // Number of tile rows
-        tilewidth: 40,  // Visual width of a tile
-        tileheight: 40, // Visual height of a tile
+        tileWidth: 40,  // Visual width of a tile
+        tileHeight: 40, // Visual height of a tile
         tiles: [],      // The two-dimensional tile array
-        selectedtile: {selected: false, column: 0, row: 0}
+        selectedTile: {selected: false, column: 0, row: 0}
     };
 
     // All of the different tile colors in RGB
-    var tilecolors = [[255, 128, 128],
+    var tileColors = [[255, 128, 128],
         [128, 255, 128],
         [128, 128, 255],
         [255, 255, 128],
@@ -59,28 +59,28 @@ window.onload = function () {
     var moves = [];     // { column1, row1, column2, row2 }
 
     // Current move
-    var currentmove = {column1: 0, row1: 0, column2: 0, row2: 0};
+    var currentMove = {column1: 0, row1: 0, column2: 0, row2: 0};
 
     // Game states
-    var gamestates = {init: 0, ready: 1, resolve: 2};
-    var gamestate = gamestates.init;
+    var gameStates = {init: 0, ready: 1, resolve: 2};
+    var gameState = gameStates.init;
 
     // Score
     var score = 0;
 
     // Animation variables
-    var animationstate = 0;
-    var animationtime = 0;
-    var animationtimetotal = 0.3;
+    var animationState = 0;
+    var animationTime = 0;
+    var animationTimeTotal = 0.3;
 
     // Show available moves
-    var showmoves = false;
+    var canShowMoves = false;
 
     // The AI bot
-    var aibot = false;
+    var isAIBotEnabled = false;
 
     // Game Over
-    var gameover = false;
+    var isGameOver = false;
 
     // Gui buttons
     var buttons = [{x: 30, y: 240, width: 150, height: 50, text: "New Game"},
@@ -112,35 +112,35 @@ window.onload = function () {
     }
 
     // Main loop
-    function main(tframe) {
+    function main(currentFrameTime) {
         // Request animation frames
         window.requestAnimationFrame(main);
 
         // Update and render the game
-        update(tframe);
+        update(currentFrameTime);
         render();
     }
 
     // Update the game state
-    function update(tframe) {
-        var dt = (tframe - lastframe) / 1000;
-        lastframe = tframe;
+    function update(currentFrameTime) {
+        var deltaFrameTime = (currentFrameTime - lastFrameTime) / 1000;
+        lastFrameTime = currentFrameTime;
 
         // Update the fps counter
-        updateFps(dt);
+        updateFps(deltaFrameTime);
 
-        if (gamestate == gamestates.ready) {
+        if (gameState == gameStates.ready) {
             // Game is ready for player input
 
             // Check for game over
             if (moves.length <= 0) {
-                gameover = true;
+                isGameOver = true;
             }
 
             // Let the AI bot make a move, if enabled
-            if (aibot) {
-                animationtime += dt;
-                if (animationtime > animationtimetotal) {
+            if (isAIBotEnabled) {
+                animationTime += deltaFrameTime;
+                if (animationTime > animationTimeTotal) {
                     // Check if there are moves available
                     findMoves();
 
@@ -154,16 +154,16 @@ window.onload = function () {
                         // No moves left, Game Over. We could start a new game.
                         // newGame();
                     }
-                    animationtime = 0;
+                    animationTime = 0;
                 }
             }
-        } else if (gamestate == gamestates.resolve) {
+        } else if (gameState == gameStates.resolve) {
             // Game is busy resolving and animating clusters
-            animationtime += dt;
+            animationTime += deltaFrameTime;
 
-            if (animationstate == 0) {
+            if (animationState == 0) {
                 // Clusters need to be found and removed
-                if (animationtime > animationtimetotal) {
+                if (animationTime > animationTimeTotal) {
                     // Find clusters
                     findClusters();
 
@@ -179,62 +179,62 @@ window.onload = function () {
                         removeClusters();
 
                         // Tiles need to be shifted
-                        animationstate = 1;
+                        animationState = 1;
                     } else {
                         // No clusters found, animation complete
-                        gamestate = gamestates.ready;
+                        gameState = gameStates.ready;
                     }
-                    animationtime = 0;
+                    animationTime = 0;
                 }
-            } else if (animationstate == 1) {
+            } else if (animationState == 1) {
                 // Tiles need to be shifted
-                if (animationtime > animationtimetotal) {
+                if (animationTime > animationTimeTotal) {
                     // Shift tiles
                     shiftTiles();
 
                     // New clusters need to be found
-                    animationstate = 0;
-                    animationtime = 0;
+                    animationState = 0;
+                    animationTime = 0;
 
                     // Check if there are new clusters
                     findClusters();
                     if (clusters.length <= 0) {
                         // Animation complete
-                        gamestate = gamestates.ready;
+                        gameState = gameStates.ready;
                     }
                 }
-            } else if (animationstate == 2) {
+            } else if (animationState == 2) {
                 // Swapping tiles animation
-                if (animationtime > animationtimetotal) {
+                if (animationTime > animationTimeTotal) {
                     // Swap the tiles
-                    swap(currentmove.column1, currentmove.row1, currentmove.column2, currentmove.row2);
+                    swap(currentMove.column1, currentMove.row1, currentMove.column2, currentMove.row2);
 
                     // Check if the swap made a cluster
                     findClusters();
                     if (clusters.length > 0) {
                         // Valid swap, found one or more clusters
                         // Prepare animation states
-                        animationstate = 0;
-                        animationtime = 0;
-                        gamestate = gamestates.resolve;
+                        animationState = 0;
+                        animationTime = 0;
+                        gameState = gameStates.resolve;
                     } else {
                         // Invalid swap, Rewind swapping animation
-                        animationstate = 3;
-                        animationtime = 0;
+                        animationState = 3;
+                        animationTime = 0;
                     }
 
                     // Update moves and clusters
                     findMoves();
                     findClusters();
                 }
-            } else if (animationstate == 3) {
+            } else if (animationState == 3) {
                 // Rewind swapping animation
-                if (animationtime > animationtimetotal) {
+                if (animationTime > animationTimeTotal) {
                     // Invalid swap, swap back
-                    swap(currentmove.column1, currentmove.row1, currentmove.column2, currentmove.row2);
+                    swap(currentMove.column1, currentMove.row1, currentMove.column2, currentMove.row2);
 
                     // Animation complete
-                    gamestate = gamestates.ready;
+                    gameState = gameStates.ready;
                 }
             }
 
@@ -245,24 +245,24 @@ window.onload = function () {
     }
 
     function updateFps(dt) {
-        if (fpstime > 0.25) {
+        if (frameTime > 0.25) {
             // Calculate fps
-            fps = Math.round(framecount / fpstime);
+            fps = Math.round(frameCount / frameTime);
 
-            // Reset time and framecount
-            fpstime = 0;
-            framecount = 0;
+            // Reset time and frameCount
+            frameTime = 0;
+            frameCount = 0;
         }
 
-        // Increase time and framecount
-        fpstime += dt;
-        framecount++;
+        // Increase time and frameCount
+        frameTime += dt;
+        frameCount++;
     }
 
     // Draw text that is centered
     function drawCenterText(text, x, y, width) {
-        var textdim = context.measureText(text);
-        context.fillText(text, x + (width - textdim.width) / 2, y);
+        var textMetrics = context.measureText(text);
+        context.fillText(text, x + (width - textMetrics.width) / 2, y);
     }
 
     // Render the game
@@ -280,10 +280,10 @@ window.onload = function () {
         drawButtons();
 
         // Draw level background
-        var levelwidth = level.columns * level.tilewidth;
-        var levelheight = level.rows * level.tileheight;
+        var levelWidth = level.columns * level.tileWidth;
+        var levelHeight = level.rows * level.tileHeight;
         context.fillStyle = "#000000";
-        context.fillRect(level.x - 4, level.y - 4, levelwidth + 8, levelheight + 8);
+        context.fillRect(level.x - 4, level.y - 4, levelWidth + 8, levelHeight + 8);
 
         // Render tiles
         renderTiles();
@@ -292,18 +292,18 @@ window.onload = function () {
         renderClusters();
 
         // Render moves, when there are no clusters
-        if (showmoves && clusters.length <= 0 && gamestate == gamestates.ready) {
+        if (canShowMoves && clusters.length <= 0 && gameState == gameStates.ready) {
             renderMoves();
         }
 
         // Game Over overlay
-        if (gameover) {
+        if (isGameOver) {
             context.fillStyle = "rgba(0, 0, 0, 0.8)";
-            context.fillRect(level.x, level.y, levelwidth, levelheight);
+            context.fillRect(level.x, level.y, levelWidth, levelHeight);
 
             context.fillStyle = "#ffffff";
             context.font = "24px Verdana";
-            drawCenterText("Game Over!", level.x, level.y + levelheight / 2 + 10, levelwidth);
+            drawCenterText("Game Over!", level.x, level.y + levelHeight / 2 + 10, levelWidth);
         }
     }
 
@@ -312,7 +312,7 @@ window.onload = function () {
         // Draw background and a border
         context.fillStyle = "#d0d0d0";
         context.fillRect(0, 0, canvas.width, canvas.height);
-        context.fillStyle = "#e8eaec";
+        context.fillStyle = "rgb(232, 234, 236)";
         context.fillRect(1, 1, canvas.width - 2, canvas.height - 2);
 
         // Draw header
@@ -340,8 +340,8 @@ window.onload = function () {
             // Draw button text
             context.fillStyle = "#ffffff";
             context.font = "18px Verdana";
-            var textdim = context.measureText(buttons[i].text);
-            context.fillText(buttons[i].text, buttons[i].x + (buttons[i].width - textdim.width) / 2, buttons[i].y + 30);
+            var textMetrics = context.measureText(buttons[i].text);
+            context.fillText(buttons[i].text, buttons[i].x + (buttons[i].width - textMetrics.width) / 2, buttons[i].y + 30);
         }
     }
 
@@ -353,87 +353,87 @@ window.onload = function () {
                 var shift = level.tiles[i][j].shift;
 
                 // Calculate the tile coordinates
-                var coord = getTileCoordinate(i, j, 0, (animationtime / animationtimetotal) * shift);
+                var coordinate = getTileCoordinate(i, j, 0, (animationTime / animationTimeTotal) * shift);
 
                 // Check if there is a tile present
                 if (level.tiles[i][j].type >= 0) {
                     // Get the color of the tile
-                    var col = tilecolors[level.tiles[i][j].type];
+                    var col = tileColors[level.tiles[i][j].type];
 
                     // Draw the tile using the color
-                    drawTile(coord.tilex, coord.tiley, col[0], col[1], col[2]);
+                    drawTile(coordinate.tileX, coordinate.tileY, col[0], col[1], col[2]);
                 }
 
                 // Draw the selected tile
-                if (level.selectedtile.selected) {
-                    if (level.selectedtile.column == i && level.selectedtile.row == j) {
+                if (level.selectedTile.selected) {
+                    if (level.selectedTile.column == i && level.selectedTile.row == j) {
                         // Draw a red tile
-                        drawTile(coord.tilex, coord.tiley, 255, 0, 0);
+                        drawTile(coordinate.tileX, coordinate.tileY, 255, 0, 0);
                     }
                 }
             }
         }
 
         // Render the swap animation
-        if (gamestate == gamestates.resolve && (animationstate == 2 || animationstate == 3)) {
+        if (gameState == gameStates.resolve && (animationState == 2 || animationState == 3)) {
             // Calculate the x and y shift
-            var shiftx = currentmove.column2 - currentmove.column1;
-            var shifty = currentmove.row2 - currentmove.row1;
+            var shiftX = currentMove.column2 - currentMove.column1;
+            var shiftY = currentMove.row2 - currentMove.row1;
 
             // First tile
-            var coord1 = getTileCoordinate(currentmove.column1, currentmove.row1, 0, 0);
-            var coord1shift = getTileCoordinate(currentmove.column1, currentmove.row1, (animationtime / animationtimetotal) * shiftx, (animationtime / animationtimetotal) * shifty);
-            var col1 = tilecolors[level.tiles[currentmove.column1][currentmove.row1].type];
+            var firstTileStartCoordinate = getTileCoordinate(currentMove.column1, currentMove.row1, 0, 0);
+            var firstTileEndCoordinate = getTileCoordinate(currentMove.column1, currentMove.row1, (animationTime / animationTimeTotal) * shiftX, (animationTime / animationTimeTotal) * shiftY);
+            var firstTileColor = tileColors[level.tiles[currentMove.column1][currentMove.row1].type];
 
             // Second tile
-            var coord2 = getTileCoordinate(currentmove.column2, currentmove.row2, 0, 0);
-            var coord2shift = getTileCoordinate(currentmove.column2, currentmove.row2, (animationtime / animationtimetotal) * -shiftx, (animationtime / animationtimetotal) * -shifty);
-            var col2 = tilecolors[level.tiles[currentmove.column2][currentmove.row2].type];
+            var secondTileStartCoordinate = getTileCoordinate(currentMove.column2, currentMove.row2, 0, 0);
+            var secondTileEndCoordinate = getTileCoordinate(currentMove.column2, currentMove.row2, (animationTime / animationTimeTotal) * -shiftX, (animationTime / animationTimeTotal) * -shiftY);
+            var secondTileColor = tileColors[level.tiles[currentMove.column2][currentMove.row2].type];
 
             // Draw a black background
-            drawTile(coord1.tilex, coord1.tiley, 0, 0, 0);
-            drawTile(coord2.tilex, coord2.tiley, 0, 0, 0);
+            drawTile(firstTileStartCoordinate.tileX, firstTileStartCoordinate.tileY, 0, 0, 0);
+            drawTile(secondTileStartCoordinate.tileX, secondTileStartCoordinate.tileY, 0, 0, 0);
 
             // Change the order, depending on the animation state
-            if (animationstate == 2) {
+            if (animationState == 2) {
                 // Draw the tiles
-                drawTile(coord1shift.tilex, coord1shift.tiley, col1[0], col1[1], col1[2]);
-                drawTile(coord2shift.tilex, coord2shift.tiley, col2[0], col2[1], col2[2]);
+                drawTile(firstTileEndCoordinate.tileX, firstTileEndCoordinate.tileY, firstTileColor[0], firstTileColor[1], firstTileColor[2]);
+                drawTile(secondTileEndCoordinate.tileX, secondTileEndCoordinate.tileY, secondTileColor[0], secondTileColor[1], secondTileColor[2]);
             } else {
                 // Draw the tiles
-                drawTile(coord2shift.tilex, coord2shift.tiley, col2[0], col2[1], col2[2]);
-                drawTile(coord1shift.tilex, coord1shift.tiley, col1[0], col1[1], col1[2]);
+                drawTile(secondTileEndCoordinate.tileX, secondTileEndCoordinate.tileY, secondTileColor[0], secondTileColor[1], secondTileColor[2]);
+                drawTile(firstTileEndCoordinate.tileX, firstTileEndCoordinate.tileY, firstTileColor[0], firstTileColor[1], firstTileColor[2]);
             }
         }
     }
 
     // Get the tile coordinate
-    function getTileCoordinate(column, row, columnoffset, rowoffset) {
-        var tilex = level.x + (column + columnoffset) * level.tilewidth;
-        var tiley = level.y + (row + rowoffset) * level.tileheight;
-        return {tilex: tilex, tiley: tiley};
+    function getTileCoordinate(column, row, columnOffset, rowOffset) {
+        var tileX = level.x + (column + columnOffset) * level.tileWidth;
+        var tileY = level.y + (row + rowOffset) * level.tileHeight;
+        return {tileX: tileX, tileY: tileY};
     }
 
     // Draw a tile with a color
     function drawTile(x, y, r, g, b) {
         context.fillStyle = "rgb(" + r + "," + g + "," + b + ")";
-        context.fillRect(x + 2, y + 2, level.tilewidth - 4, level.tileheight - 4);
+        context.fillRect(x + 2, y + 2, level.tileWidth - 4, level.tileHeight - 4);
     }
 
     // Render clusters
     function renderClusters() {
         for (var i = 0; i < clusters.length; i++) {
             // Calculate the tile coordinates
-            var coord = getTileCoordinate(clusters[i].column, clusters[i].row, 0, 0);
+            var coordinate = getTileCoordinate(clusters[i].column, clusters[i].row, 0, 0);
 
             if (clusters[i].horizontal) {
                 // Draw a horizontal line
                 context.fillStyle = "#00ff00";
-                context.fillRect(coord.tilex + level.tilewidth / 2, coord.tiley + level.tileheight / 2 - 4, (clusters[i].length - 1) * level.tilewidth, 8);
+                context.fillRect(coordinate.tileX + level.tileWidth / 2, coordinate.tileY + level.tileHeight / 2 - 4, (clusters[i].length - 1) * level.tileWidth, 8);
             } else {
                 // Draw a vertical line
                 context.fillStyle = "#0000ff";
-                context.fillRect(coord.tilex + level.tilewidth / 2 - 4, coord.tiley + level.tileheight / 2, 8, (clusters[i].length - 1) * level.tileheight);
+                context.fillRect(coordinate.tileX + level.tileWidth / 2 - 4, coordinate.tileY + level.tileHeight / 2, 8, (clusters[i].length - 1) * level.tileHeight);
             }
         }
     }
@@ -442,14 +442,14 @@ window.onload = function () {
     function renderMoves() {
         for (var i = 0; i < moves.length; i++) {
             // Calculate coordinates of tile 1 and 2
-            var coord1 = getTileCoordinate(moves[i].column1, moves[i].row1, 0, 0);
-            var coord2 = getTileCoordinate(moves[i].column2, moves[i].row2, 0, 0);
+            var firstTileCoordinate = getTileCoordinate(moves[i].column1, moves[i].row1, 0, 0);
+            var secondTileCoordinate = getTileCoordinate(moves[i].column2, moves[i].row2, 0, 0);
 
             // Draw a line from tile 1 to tile 2
             context.strokeStyle = "#ff0000";
             context.beginPath();
-            context.moveTo(coord1.tilex + level.tilewidth / 2, coord1.tiley + level.tileheight / 2);
-            context.lineTo(coord2.tilex + level.tilewidth / 2, coord2.tiley + level.tileheight / 2);
+            context.moveTo(firstTileCoordinate.tileX + level.tileWidth / 2, firstTileCoordinate.tileY + level.tileHeight / 2);
+            context.lineTo(secondTileCoordinate.tileX + level.tileWidth / 2, secondTileCoordinate.tileY + level.tileHeight / 2);
             context.stroke();
         }
     }
@@ -459,11 +459,11 @@ window.onload = function () {
         // Reset score
         score = 0;
 
-        // Set the gamestate to ready
-        gamestate = gamestates.ready;
+        // Set the gameState to ready
+        gameState = gameStates.ready;
 
         // Reset game over
-        gameover = false;
+        isGameOver = false;
 
         // Create the level
         createLevel();
@@ -502,7 +502,7 @@ window.onload = function () {
 
     // Get a random tile
     function getRandomTile() {
-        return Math.floor(Math.random() * tilecolors.length);
+        return Math.floor(Math.random() * tileColors.length);
     }
 
     // Remove clusters and insert tiles
@@ -532,36 +532,36 @@ window.onload = function () {
         // Find horizontal clusters
         for (var j = 0; j < level.rows; j++) {
             // Start with a single tile, cluster of 1
-            var matchlength = 1;
+            var matchLength = 1;
             for (var i = 0; i < level.columns; i++) {
-                var checkcluster = false;
+                var isClusterFound = false;
 
                 if (i == level.columns - 1) {
                     // Last tile
-                    checkcluster = true;
+                    isClusterFound = true;
                 } else {
                     // Check the type of the next tile
                     if (level.tiles[i][j].type == level.tiles[i + 1][j].type &&
                         level.tiles[i][j].type != -1) {
-                        // Same type as the previous tile, increase matchlength
-                        matchlength += 1;
+                        // Same type as the previous tile, increase matchLength
+                        matchLength += 1;
                     } else {
                         // Different type
-                        checkcluster = true;
+                        isClusterFound = true;
                     }
                 }
 
                 // Check if there was a cluster
-                if (checkcluster) {
-                    if (matchlength >= 3) {
+                if (isClusterFound) {
+                    if (matchLength >= 3) {
                         // Found a horizontal cluster
                         clusters.push({
-                            column: i + 1 - matchlength, row: j,
-                            length: matchlength, horizontal: true
+                            column: i + 1 - matchLength, row: j,
+                            length: matchLength, horizontal: true
                         });
                     }
 
-                    matchlength = 1;
+                    matchLength = 1;
                 }
             }
         }
@@ -569,36 +569,36 @@ window.onload = function () {
         // Find vertical clusters
         for (var i = 0; i < level.columns; i++) {
             // Start with a single tile, cluster of 1
-            var matchlength = 1;
+            var matchLength = 1;
             for (var j = 0; j < level.rows; j++) {
-                var checkcluster = false;
+                var isClusterFound = false;
 
                 if (j == level.rows - 1) {
                     // Last tile
-                    checkcluster = true;
+                    isClusterFound = true;
                 } else {
                     // Check the type of the next tile
                     if (level.tiles[i][j].type == level.tiles[i][j + 1].type &&
                         level.tiles[i][j].type != -1) {
-                        // Same type as the previous tile, increase matchlength
-                        matchlength += 1;
+                        // Same type as the previous tile, increase matchLength
+                        matchLength += 1;
                     } else {
                         // Different type
-                        checkcluster = true;
+                        isClusterFound = true;
                     }
                 }
 
                 // Check if there was a cluster
-                if (checkcluster) {
-                    if (matchlength >= 3) {
+                if (isClusterFound) {
+                    if (matchLength >= 3) {
                         // Found a vertical cluster
                         clusters.push({
-                            column: i, row: j + 1 - matchlength,
-                            length: matchlength, horizontal: false
+                            column: i, row: j + 1 - matchLength,
+                            length: matchLength, horizontal: false
                         });
                     }
 
-                    matchlength = 1;
+                    matchLength = 1;
                 }
             }
         }
@@ -650,15 +650,15 @@ window.onload = function () {
         for (var i = 0; i < clusters.length; i++) {
             //  { column, row, length, horizontal }
             var cluster = clusters[i];
-            var coffset = 0;
-            var roffset = 0;
+            var columnOffset = 0;
+            var rowOffset = 0;
             for (var j = 0; j < cluster.length; j++) {
-                func(i, cluster.column + coffset, cluster.row + roffset, cluster);
+                func(i, cluster.column + columnOffset, cluster.row + rowOffset, cluster);
 
                 if (cluster.horizontal) {
-                    coffset++;
+                    columnOffset++;
                 } else {
-                    roffset++;
+                    rowOffset++;
                 }
             }
         }
@@ -714,8 +714,8 @@ window.onload = function () {
     // Get the tile under the mouse
     function getMouseTile(pos) {
         // Calculate the index of the tile
-        var tx = Math.floor((pos.x - level.x) / level.tilewidth);
-        var ty = Math.floor((pos.y - level.y) / level.tileheight);
+        var tx = Math.floor((pos.x - level.x) / level.tileWidth);
+        var ty = Math.floor((pos.y - level.y) / level.tileHeight);
 
         // Check if the tile is valid
         if (tx >= 0 && tx < level.columns && ty >= 0 && ty < level.rows) {
@@ -748,23 +748,23 @@ window.onload = function () {
 
     // Swap two tiles in the level
     function swap(x1, y1, x2, y2) {
-        var typeswap = level.tiles[x1][y1].type;
+        var firstTileType = level.tiles[x1][y1].type;
         level.tiles[x1][y1].type = level.tiles[x2][y2].type;
-        level.tiles[x2][y2].type = typeswap;
+        level.tiles[x2][y2].type = firstTileType;
     }
 
     // Swap two tiles as a player action
     function mouseSwap(c1, r1, c2, r2) {
         // Save the current move
-        currentmove = {column1: c1, row1: r1, column2: c2, row2: r2};
+        currentMove = {column1: c1, row1: r1, column2: c2, row2: r2};
 
         // Deselect
-        level.selectedtile.selected = false;
+        level.selectedTile.selected = false;
 
         // Start animation
-        animationstate = 2;
-        animationtime = 0;
-        gamestate = gamestates.resolve;
+        animationState = 2;
+        animationTime = 0;
+        gameState = gameStates.resolve;
     }
 
     // On mouse movement
@@ -773,16 +773,16 @@ window.onload = function () {
         var pos = getMousePos(canvas, e);
 
         // Check if we are dragging with a tile selected
-        if (drag && level.selectedtile.selected) {
+        if (drag && level.selectedTile.selected) {
             // Get the tile under the mouse
             mt = getMouseTile(pos);
             if (mt.valid) {
                 // Valid tile
 
                 // Check if the tiles can be swapped
-                if (canSwap(mt.x, mt.y, level.selectedtile.column, level.selectedtile.row)) {
+                if (canSwap(mt.x, mt.y, level.selectedTile.column, level.selectedTile.row)) {
                     // Swap the tiles
-                    mouseSwap(mt.x, mt.y, level.selectedtile.column, level.selectedtile.row);
+                    mouseSwap(mt.x, mt.y, level.selectedTile.column, level.selectedTile.row);
                 }
             }
         }
@@ -801,28 +801,28 @@ window.onload = function () {
             if (mt.valid) {
                 // Valid tile
                 var swapped = false;
-                if (level.selectedtile.selected) {
-                    if (mt.x == level.selectedtile.column && mt.y == level.selectedtile.row) {
+                if (level.selectedTile.selected) {
+                    if (mt.x == level.selectedTile.column && mt.y == level.selectedTile.row) {
                         // Same tile selected, deselect
-                        level.selectedtile.selected = false;
+                        level.selectedTile.selected = false;
                         drag = true;
                         return;
-                    } else if (canSwap(mt.x, mt.y, level.selectedtile.column, level.selectedtile.row)) {
+                    } else if (canSwap(mt.x, mt.y, level.selectedTile.column, level.selectedTile.row)) {
                         // Tiles can be swapped, swap the tiles
-                        mouseSwap(mt.x, mt.y, level.selectedtile.column, level.selectedtile.row);
+                        mouseSwap(mt.x, mt.y, level.selectedTile.column, level.selectedTile.row);
                         swapped = true;
                     }
                 }
 
                 if (!swapped) {
                     // Set the new selected tile
-                    level.selectedtile.column = mt.x;
-                    level.selectedtile.row = mt.y;
-                    level.selectedtile.selected = true;
+                    level.selectedTile.column = mt.x;
+                    level.selectedTile.row = mt.y;
+                    level.selectedTile.selected = true;
                 }
             } else {
                 // Invalid tile
-                level.selectedtile.selected = false;
+                level.selectedTile.selected = false;
             }
 
             // Start dragging
@@ -840,12 +840,12 @@ window.onload = function () {
                     newGame();
                 } else if (i == 1) {
                     // Show Moves
-                    showmoves = !showmoves;
-                    buttons[i].text = (showmoves ? "Hide" : "Show") + " Moves";
+                    canShowMoves = !canShowMoves;
+                    buttons[i].text = (canShowMoves ? "Hide" : "Show") + " Moves";
                 } else if (i == 2) {
                     // AI Bot
-                    aibot = !aibot;
-                    buttons[i].text = (aibot ? "Disable" : "Enable") + " AI Bot";
+                    isAIBotEnabled = !isAIBotEnabled;
+                    buttons[i].text = (isAIBotEnabled ? "Disable" : "Enable") + " AI Bot";
                 }
             }
         }
