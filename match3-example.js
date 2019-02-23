@@ -648,14 +648,14 @@ window.onload = function () {
     }
 
     // Loop over the cluster tiles and execute a function
-    function loopClusters(func) {
+    function loopClusters(clusterFunction) {
         for (var i = 0; i < clusters.length; i++) {
             //  { column, row, length, horizontal }
             var cluster = clusters[i];
             var columnOffset = 0;
             var rowOffset = 0;
             for (var j = 0; j < cluster.length; j++) {
-                func(i, cluster.column + columnOffset, cluster.row + rowOffset, cluster);
+                clusterFunction(cluster.column + columnOffset, cluster.row + rowOffset);
 
                 if (cluster.horizontal) {
                     columnOffset++;
@@ -669,7 +669,7 @@ window.onload = function () {
     // Remove the clusters
     function removeClusters() {
         // Change the type of the tiles to -1, indicating a removed tile
-        loopClusters(function (index, column, row) {
+        loopClusters(function (column, row) {
             level.tiles[column][row].type = -1;
         });
 
