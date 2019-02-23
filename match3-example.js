@@ -172,7 +172,6 @@ window.onload = function () {
                         for (var i = 0; i < clusters.length; i++) {
                             // Add extra points for longer clusters
                             score += 100 * (clusters[i].length - 2);
-                            ;
                         }
 
                         // Clusters found, remove them
@@ -526,15 +525,16 @@ window.onload = function () {
 
     // Find clusters in the level
     function findClusters() {
+        var i, j, matchLength, isClusterFound;
         // Reset clusters
-        clusters = []
+        clusters = [];
 
         // Find horizontal clusters
-        for (var j = 0; j < level.rows; j++) {
+        for (j = 0; j < level.rows; j++) {
             // Start with a single tile, cluster of 1
-            var matchLength = 1;
-            for (var i = 0; i < level.columns; i++) {
-                var isClusterFound = false;
+            matchLength = 1;
+            for (i = 0; i < level.columns; i++) {
+                isClusterFound = false;
 
                 if (i == level.columns - 1) {
                     // Last tile
@@ -567,11 +567,11 @@ window.onload = function () {
         }
 
         // Find vertical clusters
-        for (var i = 0; i < level.columns; i++) {
+        for (i = 0; i < level.columns; i++) {
             // Start with a single tile, cluster of 1
-            var matchLength = 1;
-            for (var j = 0; j < level.rows; j++) {
-                var isClusterFound = false;
+            matchLength = 1;
+            for (j = 0; j < level.rows; j++) {
+                isClusterFound = false;
 
                 if (j == level.rows - 1) {
                     // Last tile
@@ -606,12 +606,14 @@ window.onload = function () {
 
     // Find available moves
     function findMoves() {
+        var i, j;
+
         // Reset moves
-        moves = []
+        moves = [];
 
         // Check horizontal swaps
-        for (var j = 0; j < level.rows; j++) {
-            for (var i = 0; i < level.columns - 1; i++) {
+        for (j = 0; j < level.rows; j++) {
+            for (i = 0; i < level.columns - 1; i++) {
                 // Swap, find clusters and swap back
                 swap(i, j, i + 1, j);
                 findClusters();
@@ -626,8 +628,8 @@ window.onload = function () {
         }
 
         // Check vertical swaps
-        for (var i = 0; i < level.columns; i++) {
-            for (var j = 0; j < level.rows - 1; j++) {
+        for (i = 0; i < level.columns; i++) {
+            for (j = 0; j < level.rows - 1; j++) {
                 // Swap, find clusters and swap back
                 swap(i, j, i, j + 1);
                 findClusters();
@@ -667,7 +669,7 @@ window.onload = function () {
     // Remove the clusters
     function removeClusters() {
         // Change the type of the tiles to -1, indicating a removed tile
-        loopClusters(function (index, column, row, cluster) {
+        loopClusters(function (index, column, row) {
             level.tiles[column][row].type = -1;
         });
 
@@ -738,12 +740,10 @@ window.onload = function () {
     // Check if two tiles can be swapped
     function canSwap(x1, y1, x2, y2) {
         // Check if the tile is a direct neighbor of the selected tile
-        if ((Math.abs(x1 - x2) == 1 && y1 == y2) ||
-            (Math.abs(y1 - y2) == 1 && x1 == x2)) {
-            return true;
-        }
-
-        return false;
+        return (
+            (Math.abs(x1 - x2) == 1 && y1 == y2) ||
+            (Math.abs(y1 - y2) == 1 && x1 == x2)
+        );
     }
 
     // Swap two tiles in the level
@@ -775,14 +775,14 @@ window.onload = function () {
         // Check if we are dragging with a tile selected
         if (drag && level.selectedTile.selected) {
             // Get the tile under the mouse
-            mt = getMouseTile(pos);
-            if (mt.valid) {
+            var mouseTilePosition = getMouseTile(pos);
+            if (mouseTilePosition.valid) {
                 // Valid tile
 
                 // Check if the tiles can be swapped
-                if (canSwap(mt.x, mt.y, level.selectedTile.column, level.selectedTile.row)) {
+                if (canSwap(mouseTilePosition.x, mouseTilePosition.y, level.selectedTile.column, level.selectedTile.row)) {
                     // Swap the tiles
-                    mouseSwap(mt.x, mt.y, level.selectedTile.column, level.selectedTile.row);
+                    mouseSwap(mouseTilePosition.x, mouseTilePosition.y, level.selectedTile.column, level.selectedTile.row);
                 }
             }
         }
@@ -796,28 +796,27 @@ window.onload = function () {
         // Start dragging
         if (!drag) {
             // Get the tile under the mouse
-            mt = getMouseTile(pos);
+            var mouseTilePosition = getMouseTile(pos);
 
-            if (mt.valid) {
+            if (mouseTilePosition.valid) {
                 // Valid tile
                 var swapped = false;
                 if (level.selectedTile.selected) {
-                    if (mt.x == level.selectedTile.column && mt.y == level.selectedTile.row) {
+                    if (mouseTilePosition.x == level.selectedTile.column && mouseTilePosition.y == level.selectedTile.row) {
                         // Same tile selected, deselect
                         level.selectedTile.selected = false;
-                        drag = true;
                         return;
-                    } else if (canSwap(mt.x, mt.y, level.selectedTile.column, level.selectedTile.row)) {
+                    } else if (canSwap(mouseTilePosition.x, mouseTilePosition.y, level.selectedTile.column, level.selectedTile.row)) {
                         // Tiles can be swapped, swap the tiles
-                        mouseSwap(mt.x, mt.y, level.selectedTile.column, level.selectedTile.row);
+                        mouseSwap(mouseTilePosition.x, mouseTilePosition.y, level.selectedTile.column, level.selectedTile.row);
                         swapped = true;
                     }
                 }
 
                 if (!swapped) {
                     // Set the new selected tile
-                    level.selectedTile.column = mt.x;
-                    level.selectedTile.row = mt.y;
+                    level.selectedTile.column = mouseTilePosition.x;
+                    level.selectedTile.row = mouseTilePosition.y;
                     level.selectedTile.selected = true;
                 }
             } else {
@@ -851,12 +850,12 @@ window.onload = function () {
         }
     }
 
-    function onMouseUp(e) {
+    function onMouseUp() {
         // Reset dragging
         drag = false;
     }
 
-    function onMouseOut(e) {
+    function onMouseOut() {
         // Reset dragging
         drag = false;
     }
